@@ -74,11 +74,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw new Error('Failed to get IPN ID');
     }
 
+    // Validate required fields
+    if (!orderData.currency || !orderData.amount) {
+      return res.status(400).json({ error: 'Currency and amount are required' });
+    }
+
+    // Ensure amount is in the correct format for PesaPal (no more than 2 decimal places)
+    const amount = parseFloat(orderData.amount.toFixed(2));
+
+    // Convert amount to KES if currency is not KES (PesaPal requirement)
+    let finalAmount = amount;
+    let finalCurrency = orderData.currency;
+
+    if (orderData.currency !== 'KES') {
+      try {
+        // Get exchange rate from USD to KES
+        const exchangeResponse = await axios.get(
+          `https://api.exchangerate-api.com/v4/latest/USD`
+        );
+        const rates = exchangeResponse.data.rates;
+        const kesRate = rates['KES'];
+        
+        // Convert to KES
+        finalAmount = amount * kesRate;
+        finalCurrency = 'KES';
+      } catch (error) {
+        console.error('Error converting currency:', error);
+        return res.status(500).json({ error: 'Currency conversion failed' });
+      }
+    }
+
+    const pesapalData = {
+      ...orderData,
+      amount: finalAmount.toFixed(2),
+      currency: finalCurrency,
+    };
+
     // Submit order with IPN ID
     const submitResponse = await axios.post(
       `${PESAPAL_URL}/api/Transactions/SubmitOrderRequest`,
       {
-        ...orderData,
+        ...pesapalData,
         notification_id: ipnData.ipn_id,
       },
       {
