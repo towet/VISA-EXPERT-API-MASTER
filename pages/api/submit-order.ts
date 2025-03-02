@@ -93,9 +93,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       merchant_reference: `visa_expert_${Date.now()}`,
       ipn_notification_type: 'POST',
       language: 'EN',
-      mobile_number_prefix: '', // Remove hardcoded prefix to let PesaPal handle it based on country
-      mobile_number_format: 'INTERNATIONAL', // Tell PesaPal to use international format
-      mobile_provider_codes: [], // Let PesaPal determine available providers based on country
+      mobile_payment: {
+        allow_international: true,
+        number_format: 'INTERNATIONAL',
+        country_code: 'AUTO',
+        providers: 'ALL'
+      }
     };
 
     // Submit order with IPN ID
