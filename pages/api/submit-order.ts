@@ -82,10 +82,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Ensure amount is in the correct format for PesaPal (no more than 2 decimal places)
     const amount = parseFloat(orderData.amount.toFixed(2));
 
+    // Prepare PesaPal order data with international payment support
     const pesapalData = {
       ...orderData,
       amount: amount.toFixed(2),
-      currency: orderData.currency, // Use the currency selected by the user
+      currency: orderData.currency,
+      payment_methods: ['CARD', 'MOBILE_MONEY'],
+      billing_country_code: orderData.billing_address?.country_code || 'ANY',
+      payment_method_country_code: orderData.billing_address?.country_code || 'ANY',
+      merchant_reference: `visa_expert_${Date.now()}`,
+      ipn_notification_type: 'POST',
+      language: 'EN',
+      mobile_number_prefix: '', // Remove hardcoded prefix to let PesaPal handle it based on country
+      mobile_number_format: 'INTERNATIONAL', // Tell PesaPal to use international format
+      mobile_provider_codes: [], // Let PesaPal determine available providers based on country
     };
 
     // Submit order with IPN ID
