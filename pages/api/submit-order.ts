@@ -85,7 +85,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const pesapalData = {
       ...orderData,
       amount: amount.toFixed(2),
-      currency: 'USD', // Always use USD for international payments
+      currency: orderData.currency, // Use the currency selected by the user
     };
 
     // Submit order with IPN ID
